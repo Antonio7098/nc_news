@@ -1,3 +1,3 @@
 # NC News Seeding
 
-- Instructions for this sprint can be found at https://l2c.northcoders.com/courses/be/seeding-nc-news
+You will need to set up your environment variables. In db/env, create variables for the datasets you will be connecting to eg. one for development, one for tests.
