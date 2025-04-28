@@ -1,5 +1,5 @@
 const express = require('express')
-const { getEndpoints, getTopics } = require("./controller")
+const { getEndpoints, getTopics, getArticle } = require("./controller")
 
 // Setting up the app and specifying that we want to parse get requests
 const app = express()
@@ -11,9 +11,24 @@ app.get("/api", getEndpoints)
 // Get a list of topics
 app.get("/api/topics", getTopics)
 
+// Get article by id
+app.get("/api/articles/:article_id", getArticle)
+
 // Catch all invalid endpoints
 app.all('/*splat', (req, res, next) => {
-  next({ status: 400, msg: 'Endpoint not found' })
+  next({ status: 404, msg: 'Not found' })
+})
+
+// PSQL Error handler
+app.use((err, req, res, next) => {
+  if (err.code === "22P02") {
+    const status = 400
+    const msg = "Bad request"
+    res.status(status).send({status, msg})
+  }
+  else {
+    next(err)
+  }
 })
 
 // Error handler
