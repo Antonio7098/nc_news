@@ -27,12 +27,12 @@ describe("GET /api", () => {
 })
 
 describe('Bad path error', () => {
-  test("400: Responds with bad path error", () => {
+  test("404: Responds with bad path error", () => {
     return request(app)
       .get("/api/not-a-path")
-      .expect(400)
+      .expect(404)
       .then(({ body: { msg } }) => {
-        expect(msg).toBe("Endpoint not found")
+        expect(msg).toBe("Not found")
       })
   })
 });
@@ -44,7 +44,8 @@ describe("GET /api/topics", () => {
         .get("/api/topics")
         .expect(200)
         .then(({ body: { topics } }) => {
-          console.log(topics)
+          expect(Array.isArray(topics)).toBe(true)
+          expect(topics.length).toBeGreaterThan(0)
           topics.forEach((topic) => {
             expect(topic).toEqual(expect.objectContaining({
               slug: expect.any(String),
@@ -53,5 +54,47 @@ describe("GET /api/topics", () => {
           })
         })
     })
+  });
+})
+
+describe("GET /api/articles/:article_id", () => {
+  describe('Behaviour', () => {
+    test("200: Responds with an the correct article", () => {
+      return request(app)
+        .get("/api/articles/1")
+        .expect(200)
+        .then(({ body: { article } }) => {
+          expect(article).toEqual(expect.objectContaining({
+            "article_id": 1,
+            "title": expect.any(String),
+            "topic": expect.any(String),
+            "author": "butter_bridge",
+            "body": expect.any(String),
+            "created_at": expect.any(String),
+            "votes": expect.any(Number),
+            "article_img_url": expect.any(String)
+          }))
+          })
+        })
+    })
+
+  describe('Error handling', () => {
+    test('404: No article with that id', () => {
+      return request(app)
+        .get("/api/articles/1000000")
+        .expect(404)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("No article found with that ID")
+        })
+      })
+
+      test('400: Bad article ID', () => {
+        return request(app)
+          .get("/api/articles/cow")
+          .expect(400)
+          .then(({ body: { msg } }) => {
+            expect(msg).toBe("Bad request")
+          })
+        })
   });
 })
