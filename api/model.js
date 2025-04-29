@@ -26,4 +26,15 @@ function selectArticles() {
         })
 }
 
-module.exports = {selectTopics, selectArticle, selectArticles}
+function selectArticleComments(articleId) {
+    const selectComments = db.query("SELECT * FROM comments WHERE article_id = $1", [articleId])
+    const checkArticle = selectArticle(articleId)
+
+    return Promise.all([selectComments, checkArticle])
+        .then((result) => {
+            const comments = result[0].rows
+            return comments
+        })
+}
+
+module.exports = {selectTopics, selectArticle, selectArticles, selectArticleComments}
