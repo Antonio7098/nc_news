@@ -95,7 +95,7 @@ describe("GET /api/articles/:article_id", () => {
           .then(({ body: { msg } }) => {
             expect(msg).toBe("Bad request")
           })
-        })
+      })
   });
 })
 
@@ -122,5 +122,48 @@ describe('"GET /api/articles"', () => {
         })
       })
     });
+  });
+});
+
+describe('"GET /api/articles/:article_id/comments"', () => {
+  describe('Behaviour', () => {
+    test('200: Returns array of all comments for that article', () => {
+      return request(app)
+      .get("/api/articles/1/comments")
+      .expect(200)
+      .then(({ body: { comments } }) => {
+        expect(Array.isArray(comments)).toBe(true)
+        comments.forEach((comment) => {
+          expect(comment).toEqual(expect.objectContaining({
+            comment_id: expect.any(Number),
+            votes: expect.any(Number),
+            created_at: expect.any(String),
+            author: expect.any(String),
+            body: expect.any(String),
+            article_id: 1
+          }))
+        })
+      })
+    });
+  });
+
+  describe('Error handling', () => {
+    test('404: No article with that id', () => {
+      return request(app)
+        .get("/api/articles/1000000/comments")
+        .expect(404)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("No article found with that ID")
+        })
+    })
+
+    test('400: Bad article ID', () => {
+      return request(app)
+        .get("/api/articles/cow/comments")
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request")
+        })
+    })
   });
 });
