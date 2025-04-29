@@ -74,8 +74,8 @@ describe("GET /api/articles/:article_id", () => {
             "votes": expect.any(Number),
             "article_img_url": expect.any(String)
           }))
-          })
         })
+      })
     })
 
   describe('Error handling', () => {
@@ -143,6 +143,7 @@ describe('"GET /api/articles/:article_id/comments"', () => {
             article_id: 1
           }))
         })
+        expect(comments).toBeSortedBy("created_at", {descending: true})
       })
     });
   });
