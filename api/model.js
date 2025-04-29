@@ -27,13 +27,14 @@ function selectArticles() {
 }
 
 function selectArticleComments(articleId) {
-    const selectComments = db.query("SELECT * FROM comments WHERE article_id = $1", [articleId])
+    const selectComments = db.query("SELECT * FROM comments WHERE article_id = $1 ORDER BY created_at ASC", [articleId])
     const checkArticle = selectArticle(articleId)
 
     return Promise.all([selectComments, checkArticle])
         .then((result) => {
             const comments = result[0].rows
-            return comments
+            const sortedComments = comments.sort((a, b) => b.created_at - a.created_at)
+            return sortedComments
         })
 }
 
