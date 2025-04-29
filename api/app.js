@@ -1,5 +1,5 @@
 const express = require('express')
-const { getEndpoints, getTopics, getArticle } = require("./controller")
+const { getEndpoints, getTopics, getArticle, getArticles } = require("./controller")
 
 // Setting up the app and specifying that we want to parse get requests
 const app = express()
@@ -13,6 +13,9 @@ app.get("/api/topics", getTopics)
 
 // Get article by id
 app.get("/api/articles/:article_id", getArticle)
+
+// Get articles
+app.get("/api/articles", getArticles)
 
 // Catch all invalid endpoints
 app.all('/*splat', (req, res, next) => {
