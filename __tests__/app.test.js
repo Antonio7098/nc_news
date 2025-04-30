@@ -394,3 +394,24 @@ describe('DELETE /api/comments/:comment_id', () => {
       })
   });
 })
+
+describe("GET /api/users", () => {
+  describe('Happy path', () => {
+    test("200: Responds with an object containing all users", () => {
+      return request(app)
+        .get("/api/users")
+        .expect(200)
+        .then(({ body: { users } }) => {
+          expect(Array.isArray(users)).toBe(true)
+          expect(users.length).toBeGreaterThan(0)
+          users.forEach((user) => {
+            expect(user).toEqual(expect.objectContaining({
+              username: expect.any(String),
+              name: expect.any(String),
+              avatar_url: expect.any(String)
+            }))
+          })
+        })
+    })
+  });
+})
