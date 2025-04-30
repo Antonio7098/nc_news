@@ -1,5 +1,5 @@
 const express = require('express')
-const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment } = require("./controller")
+const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes} = require("./controller")
 
 // Setting up the app and specifying that we want to parse get requests
 const app = express()
@@ -23,6 +23,9 @@ app.get("/api/articles/:article_id/comments", getArticleComments)
 // Add comment
 app.post("/api/articles/:article_id/comments", addComment)
 
+// Increment votes
+app.patch("/api/articles/:article_id", patchArticleVotes)
+
 // Catch all invalid endpoints
 app.all('/*splat', (req, res, next) => {
   next({ status: 404, msg: 'Not found' })
@@ -45,7 +48,24 @@ app.use((err, req, res, next) => {
   }
 })
 
-// Error handler
+// Custom errors
+app.use((err, req, res, next) => {
+  if (err.missingField) {
+    const status = 400
+    const msg = "Bad request: Missing required fields"
+    res.status(status).send({status, msg})
+  }
+  else if (err.invalidInputFormat) {
+    const status = 400
+    const msg = "Bad request: Invalid input format"
+    res.status(status).send({status, msg})
+  }
+  else {
+    next(err)
+  }
+})
+
+// General handler
 app.use((err, req, res, next) => {
   const status = err.status
   const msg = err.msg
