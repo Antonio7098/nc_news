@@ -117,8 +117,75 @@ describe('"GET /api/articles"', () => {
             comment_count: expect.any(Number)
           }))
         })
+        expect(articles).toBeSortedBy('created_at', {descending: true})
       })
     });
+  });
+
+  describe('Sort by column', () => {
+    describe('Happy path', () => {
+      test('200: Returns array of all articles in correct order', () => {
+        const columns = ['article_id', 'title', 'topic', 'author', 'created_at', 'votes', 'article_img_url']
+        const queries = []
+        const orders = ['asc', 'desc'];
+        orders.forEach((order) => {
+          columns.forEach((column) => {
+            queries.push({sort_by: column, order: order})
+          })
+        })
+
+        const requests = queries.map(({sort_by, order}) =>
+          request(app)
+          .get("/api/articles")
+          .query({sort_by: sort_by, order: order})
+          .expect(200)
+        )
+
+        return Promise.all(requests)
+          .then((results) => {
+              results.forEach (({ body: { articles } }, index) => {
+                expect(Array.isArray(articles)).toBe(true)
+                expect(articles.length).toBeGreaterThan(0)
+                const { sort_by, order } = queries[index]
+                
+                articles.forEach((article) => {
+                  expect(article).toEqual(expect.objectContaining({
+                    author: expect.any(String),
+                    title: expect.any(String),
+                    article_id: expect.any(Number),
+                    topic: expect.any(String),
+                    created_at: expect.any(String), 
+                    votes: expect.any(Number),
+                    article_img_url: expect.any(String),
+                    comment_count: expect.any(Number)
+                  }))
+                })
+              expect(articles).toBeSortedBy(sort_by, {descending: order === 'desc'})
+            })
+          })
+      });
+  });
+
+  describe('Error handling', () => {
+    test("400: Invalid column name", () => {
+      return request(app)
+        .get("/api/articles")
+        .query({ sort_by: "not_a_column" })
+        .expect(400)
+        .then(({ body }) => {
+          expect(body.msg).toBe("Bad request: Invalid column name");
+        })
+    })
+
+    test("400: Invalid order", () => {
+      return request(app)
+        .get("/api/articles")
+        .query({ order: "not_an_order" })
+        .expect(400)
+        .then(({ body }) => {
+          expect(body.msg).toBe("Bad request: Invalid order");
+        })
+    })
   });
 });
 
@@ -373,6 +440,7 @@ describe('DELETE /api/comments/:comment_id', () => {
   
     })
   })
+})
 
   describe('Sad path', () => {
     test('404: No comment with that id', () => {
@@ -413,5 +481,5 @@ describe("GET /api/users", () => {
           })
         })
     })
-  });
+  })
 })
