@@ -65,4 +65,17 @@ function updateArticleVotes(articleId, increment, next) {
         })
 }
 
-module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes }
+function deleteCommentModel(commentId, next) {
+    return checkComment = db.query(`SELECT * FROM comments WHERE comment_id = $1`, [commentId])
+        .then((res) => {
+            if (res.rows.length === 0) {
+                const status = 404
+                const msg = "No comment found with that ID"
+                return Promise.reject({status, msg})
+            }
+            return db.query(`DELETE FROM comments WHERE comment_id = $1`, [commentId])
+        })
+        .catch(next)
+}
+
+module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel }
