@@ -1,4 +1,5 @@
 const db = require("../db/connection")
+const format = require("pg-format")
 
 function selectTopics() {
     return db.query("SELECT * FROM topics").then((response) => {
@@ -37,5 +38,19 @@ function selectArticleComments(articleId) {
             return sortedComments
         })
 }
+function insertIntoComments(articleId, username, body, next) {
+    const checkArticle = selectArticle(articleId)
+    console.log(articleId, body, username)
+    const addComment = db.query(`INSERT INTO comments (article_id, body, author) VALUES ($1, $2, $3) RETURNING *`, [articleId, body, username])
+    return Promise.all([addComment, checkArticle])
+        .then((res) => {
+            const comment = res[0].rows[0]
+            return comment
+        })
+        .catch((err) => {
+            console.log(err, "<----------- IN moel")
+            next(err)
+        })
+}
 
-module.exports = {selectTopics, selectArticle, selectArticles, selectArticleComments}
+module.exports = {selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments}

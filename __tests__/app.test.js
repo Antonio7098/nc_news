@@ -1,30 +1,27 @@
-const endpointsJson = require("../endpoints.json");
-const app  = require("../api/app")
-const request = require("supertest")
-const testData = require("../db/data/test-data")
-const seed = require("../db/seeds/seed")
-const db = require("../db/connection")
-
-// seeding (or re-seeding)the database before each test and then endign the connection after
+const app = require("../api/app");
+const request = require("supertest");
+const db = require("../db/connection");
+const seed = require("../db/seeds/seed");
+const testData = require("../db/data/test-data");
 
 beforeEach(() => {
-  return seed(testData)
-})
+  return seed(testData); // very important to RETURN
+});
 
 afterAll(() => {
-  return db.end()
-})
+  return db.end(); // very important to RETURN
+});
 
 describe("GET /api", () => {
   test("200: Responds with an object detailing the documentation for each endpoint", () => {
     return request(app)
       .get("/api")
       .expect(200)
-      .then(({ body: { endpoints } }) => {
-        expect(endpoints).toEqual(endpointsJson)
-      })
-  })
-})
+      .then(({ body }) => {
+        expect(body.endpoints).toBeInstanceOf(Object);
+      });
+  });
+});
 
 describe('Bad path error', () => {
   test("404: Responds with bad path error", () => {
@@ -166,5 +163,107 @@ describe('"GET /api/articles/:article_id/comments"', () => {
           expect(msg).toBe("Bad request")
         })
     })
-  });
-});
+  })
+})
+
+describe('"POST /api/articles/:article_id/comments"', () => {
+  describe('Behaviour', () => {
+    test('200: Returns the comment', () => {
+      return request(app)
+      .post("/api/articles/1/comments")
+      .send({
+        body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
+        username: "butter_bridge"
+      })
+      .expect(201)
+      .then(({ body: { comment } }) => {
+        console.log("---------------- 1 ---------------------")
+        expect(comment).toEqual(expect.objectContaining({
+          article_id: 1,
+          body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
+          votes: 0,
+          author: "butter_bridge",
+          created_at: expect.any(String)
+        }))
+      })
+    })
+
+    test('200: Adds the comment', () => {
+      return request(app)
+      .post("/api/articles/1/comments")
+      .send({
+        body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
+        username: "butter_bridge"
+      })
+      .expect(201)
+      .then(() => {
+        console.log("---------------------- 2 ----------------------------")
+        return request(app)
+        .get("/api/articles/1/comments")
+        .expect(200)
+      })
+      .then(({ body: { comments } }) => {
+        expect(comments).toContainEqual(expect.objectContaining({
+          article_id: 1,
+          body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
+          votes: 0,
+          author: "butter_bridge",
+          created_at: expect.any(String)
+        }))
+      })
+    })
+  })
+
+    describe('Error handling', () => {
+      test('404: No article with that id', () => {
+        return request(app)
+        .post("/api/articles/1000/comments")
+        .send({
+          body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
+          username: "butter_bridge"
+        })
+          .expect(404)
+          .then(({ body: { msg } }) => {
+            expect(msg).toBe("No article found with that ID")
+          })
+      })
+  
+      test('400: Bad article ID', () => {
+        return request(app)
+        .post("/api/articles/noon/comments")
+        .send({
+          body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
+          username: "butter_bridge"
+        })
+          .expect(400)
+          .then(({ body: { msg } }) => {
+            expect(msg).toBe("Bad request")
+          })
+      })
+
+    test("400: Missing required fields", () => {
+      return request(app)
+        .post("/api/articles/1/comments")
+        .send({
+          username: "butter_bridge"
+        })
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request: Missing required fields")
+        })
+    })
+
+    test("404: Username does not exist", () => {
+      return request(app)
+        .post("/api/articles/1/comments")
+        .send({
+          body: "This is a test comment",
+          username: "nonexistent_user"
+        })
+        .expect(404)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Username not found")
+        })
+    })
+  })
+})

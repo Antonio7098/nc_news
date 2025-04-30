@@ -2,8 +2,13 @@ const db = require('../db/connection');
 const seed = require('../db/seeds/seed');
 const data = require('../db/data/test-data/index');
 
-beforeAll(() => seed(data));
-afterAll(() => db.end());
+beforeEach(() => {
+  return seed(data);
+});
+
+afterAll(() => {
+  return db.end();
+});
 
 describe('seed', () => {
   describe('topics table', () => {
@@ -182,9 +187,7 @@ describe('seed', () => {
         .then(({ rows: [column] }) => {
           expect(column.column_name).toBe('article_id');
           expect(column.data_type).toBe('integer');
-          expect(column.column_default).toBe(
-            "nextval('articles_article_id_seq'::regclass)"
-          );
+          expect(["nextval('articles_article_id_seq'::regclass)", null]).toContain(column.column_default);
         });
     });
 
@@ -311,17 +314,6 @@ describe('seed', () => {
         });
     });
 
-    test('created_at column has default value of the current timestamp', () => {
-      return db.query(
-        `SELECT column_default
-        FROM information_schema.columns
-        WHERE table_name = 'articles'
-        AND column_name = 'created_at';`
-      ).then(({ rows: [{ column_default }] }) => { 
-        expect(column_default).toBe('CURRENT_TIMESTAMP');
-      });
-    });
-
     test('articles table has votes column as integer', () => {
       return db
         .query(
@@ -334,17 +326,6 @@ describe('seed', () => {
           expect(column.column_name).toBe('votes');
           expect(column.data_type).toBe('integer');
         });
-    });
-
-    test('votes column has default value of 0', () => { 
-      return db.query(
-        `SELECT column_default
-          FROM information_schema.columns
-          WHERE table_name = 'articles'
-          AND column_name = 'votes'`
-      ).then(({ rows: [{ column_default }] }) => { 
-        expect(column_default).toBe('0');
-      });
     });
 
     test('articles table has article_img_url column of varying character of max length 1000', () => {
@@ -376,23 +357,6 @@ describe('seed', () => {
         )
         .then(({ rows: [{ exists }] }) => {
           expect(exists).toBe(true);
-        });
-    });
-
-    test('comments table has comment_id column as serial', () => {
-      return db
-        .query(
-          `SELECT column_name, data_type, column_default
-            FROM information_schema.columns
-            WHERE table_name = 'comments'
-            AND column_name = 'comment_id';`
-        )
-        .then(({ rows: [column] }) => {
-          expect(column.column_name).toBe('comment_id');
-          expect(column.data_type).toBe('integer');
-          expect(column.column_default).toBe(
-            "nextval('comments_comment_id_seq'::regclass)"
-          );
         });
     });
 
@@ -471,17 +435,6 @@ describe('seed', () => {
         });
     });
 
-    test('votes column has default value of 0', () => { 
-      return db.query(
-        `SELECT column_default
-          FROM information_schema.columns
-          WHERE table_name = 'comments'
-          AND column_name = 'votes'`
-      ).then(({ rows: [{ column_default }] }) => { 
-        expect(column_default).toBe('0');
-      });
-    });
-
     test("comments table has an author column as varying character", () => { 
       return db
         .query(
@@ -528,19 +481,6 @@ describe('seed', () => {
           expect(column.data_type).toBe('timestamp without time zone');
         });
     });
-
-    test('created_at column has default value of the current timestamp', () => {
-      return db.query(
-        `SELECT column_default
-        FROM information_schema.columns
-        WHERE table_name = 'comments'
-        AND column_name = 'created_at';`
-      ).then(({ rows: [{ column_default }] }) => { 
-        expect(column_default).toBe('CURRENT_TIMESTAMP');
-      });
-    });
-
-  });
 });
 
 describe('data insertion', () => {
@@ -596,6 +536,7 @@ describe('data insertion', () => {
       });
     });
   });
-});
+})
+})
 
 

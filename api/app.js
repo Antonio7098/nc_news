@@ -1,5 +1,5 @@
 const express = require('express')
-const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments } = require("./controller")
+const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment } = require("./controller")
 
 // Setting up the app and specifying that we want to parse get requests
 const app = express()
@@ -20,6 +20,9 @@ app.get("/api/articles", getArticles)
 // Get comments by article
 app.get("/api/articles/:article_id/comments", getArticleComments)
 
+// Add comment
+app.post("/api/articles/:article_id/comments", addComment)
+
 // Catch all invalid endpoints
 app.all('/*splat', (req, res, next) => {
   next({ status: 404, msg: 'Not found' })
@@ -30,6 +33,11 @@ app.use((err, req, res, next) => {
   if (err.code === "22P02") {
     const status = 400
     const msg = "Bad request"
+    res.status(status).send({status, msg})
+  }
+  else if (err.code === "23503") {
+    const status = 404
+    const msg = "Username not found"
     res.status(status).send({status, msg})
   }
   else {

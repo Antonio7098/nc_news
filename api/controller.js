@@ -1,5 +1,5 @@
 const endpointsJson = require("../endpoints.json")
-const {selectTopics, selectArticle, selectArticles, selectArticleComments} = require("./model")
+const {selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments} = require("./model")
 // #1 Get documentation detailing all of the available API endpoints 
 function getEndpoints(req, res) {
     res.status(200).send({endpoints: endpointsJson})
@@ -37,4 +37,20 @@ function getArticleComments(req, res, next) {
         .catch(next)
 }
 
-module.exports = {getEndpoints, getTopics, getArticle, getArticles, getArticleComments}
+function addComment(req, res, next) {
+    const articleId = req.params.article_id
+    const {username, body} = req.body
+    console.log(username, body)
+    if (!username || !body){
+        const status = 400
+        const msg = "Bad request: Missing required fields"
+        return next({status, msg})
+    }
+    return insertIntoComments(articleId, username, body, next)
+        .then((comment) => {
+            return res.status(201).send({comment})
+        })
+        .catch(next)
+}
+
+module.exports = {getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment}

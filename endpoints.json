@@ -55,6 +55,21 @@
         }
       ]
     }
+  },
+
+  "POST /api/articles/:article_id/comments": {
+    "description": "Adds a new comment to the specified article_id.",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "example": {
+            "username": "butter_bridge",
+            "body": "This article changed my life!"
+          }
+        }
+      }
+    }
   }
   
 }
