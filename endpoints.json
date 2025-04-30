@@ -2,6 +2,7 @@
   "GET /api": {
     "description": "serves up a json representation of all the available endpoints of the api"
   },
+
   "GET /api/topics": {
     "description": "serves an array of all topics",
     "queries": [],
@@ -9,6 +10,7 @@
       "topics": [{ "slug": "football", "description": "Footie!" }]
     }
   },
+
   "GET /api/articles": {
     "description": "serves an array of all articles",
     "exampleResponse": {
@@ -73,44 +75,63 @@
   },
 
   "PATCH /api/articles/:article_id": {
-  "description": "Updates the votes of a specific article by its article_id.",
-  "requestBody": {
-    "required": true,
-    "example": {
-      "inc_votes": 1
-    },
-    "description": "An object specifying how much to increment or decrement the article's vote count."
-  },
-  "queries": [],
-  "responses": {
-    "200": {
-      "description": "Responds with the updated article object.",
-      "exampleResponse": {
-        "article": {
-          "article_id": 1,
-          "title": "Living in the shadow of a great man",
-          "topic": "mitch",
-          "author": "butter_bridge",
-          "body": "I find this existence challenging",
-          "created_at": "2020-07-09T20:11:00.000Z",
-          "votes": 101,
-          "article_img_url": "https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700"
+    "description": "Updates the vote count for a specific article.",
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "example": {
+            "inc_votes": 1
+          }
         }
       }
     },
-    "400": {
-      "description": "Bad request when inc_votes is missing or invalid.",
-      "exampleResponse": {
-        "msg": "Invalid vote increment"
-      }
-    },
-    "404": {
-      "description": "Article not found with given ID.",
-      "exampleResponse": {
-        "msg": "No article found with that ID"
+    "responses": {
+      "200": {
+        "description": "Returns the updated article.",
+        "content": {
+          "application/json": {
+            "example": {
+              "article": {
+                "article_id": 1,
+                "title": "Example title",
+                "topic": "coding",
+                "author": "jessjelly",
+                "body": "Example body text...",
+                "created_at": "2020-01-01T00:00:00.000Z",
+                "votes": 101,
+                "article_img_url": "https://example.com/image.png"
+              }
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Bad request (e.g., missing fields, invalid ID, or invalid vote format)."
+      },
+      "404": {
+        "description": "No article found with the given ID."
       }
     }
+  },
+
+  "GET /api/users": {
+    "description": "Serves an array of all users.",
+    "queries": [],
+    "exampleResponse": {
+      "users": [
+        {
+          "username": "jessjelly",
+          "name": "Jess Jelly",
+          "avatar_url": "https://example.com/avatar/jessjelly.png"
+        },
+        {
+          "username": "butter_bridge",
+          "name": "Jonny",
+          "avatar_url": "https://example.com/avatar/butter_bridge.png"
+        }
+      ]
+    }
   }
-}
   
 }

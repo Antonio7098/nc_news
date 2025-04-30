@@ -59,10 +59,7 @@ function updateArticleVotes(articleId, increment, next) {
             const article = res[0].rows[0]
             return article
         })
-        .catch((err) => {
-            console.log(err)
-            next(err)
-        })
+        .catch(next)
 }
 
 function deleteCommentModel(commentId, next) {
@@ -78,4 +75,12 @@ function deleteCommentModel(commentId, next) {
         .catch(next)
 }
 
-module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel }
+function selectUsers(next) {
+    return db.query(`SELECT * FROM users`)
+        .then((res) => {
+            const users = res.rows
+            return users
+        })
+}
+
+module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers }
