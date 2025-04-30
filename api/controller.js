@@ -1,5 +1,5 @@
 const endpointsJson = require("../endpoints.json")
-const { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes } = require("./model")
+const { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel } = require("./model")
 // #1 Get documentation detailing all of the available API endpoints 
 function getEndpoints(req, res) {
     res.status(200).send({endpoints: endpointsJson})
@@ -65,4 +65,16 @@ function patchArticleVotes(req, res, next) {
         })
 }
 
-module.exports = { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes}
+function deleteComment(req, res, next) {
+    const commentID = req.params.comment_id
+    if (isNaN(commentID)) {
+        const status = 400
+        msg = "Bad request: Invalid comment ID"
+        return next({status, msg})
+    }
+    return deleteCommentModel(commentID, next)
+        .then(() => res.status(204).send())
+        .catch(next)
+}
+
+module.exports = { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment }

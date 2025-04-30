@@ -1,9 +1,11 @@
 const express = require('express')
-const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes} = require("./controller")
+const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment } = require("./controller")
 
 // Setting up the app and specifying that we want to parse get requests
 const app = express()
 app.use(express.json())
+
+// ------------------------------------------------- Paths --------------------------------------------------
 
 // #1 Get documentation detailing all of the available API endpoints
 app.get("/api", getEndpoints)
@@ -25,6 +27,11 @@ app.post("/api/articles/:article_id/comments", addComment)
 
 // Increment votes
 app.patch("/api/articles/:article_id", patchArticleVotes)
+
+// Delete comment
+app.delete("/api/comments/:comment_id", deleteComment)
+
+// ------------------------------------------- Errors --------------------------------------------------
 
 // Catch all invalid endpoints
 app.all('/*splat', (req, res, next) => {

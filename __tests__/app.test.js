@@ -315,7 +315,7 @@ describe('"PATCH /api/articles/:article_id"', () => {
     })
   })
 
-  describe.only('Sad path', () => {
+  describe('Sad path', () => {
     test('404: No article with that id', () => {
       return request(app)
         .patch("/api/articles/1000000")
@@ -356,4 +356,41 @@ describe('"PATCH /api/articles/:article_id"', () => {
           })
       })
   })
+})
+
+describe('DELETE /api/comments/:comment_id', () => {
+  describe('Happy path', () => {
+    test('204: successfully deleted', () => {
+      return request(app)
+        .del("/api/comments/1")
+        .expect(204)
+        .then(() => {
+          return db.query("SELECT * FROM comments WHERE comment_id = $1", [1])
+            .then((res) => {
+              expect(res.rows.length).toBe(0)
+            })
+        })
+  
+    })
+  })
+
+  describe('Sad path', () => {
+    test('404: No comment with that id', () => {
+      return request(app)
+        .del("/api/comments/10000000")
+        .expect(404)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("No comment found with that ID")
+        })
+      })
+
+      test('400: Bad article ID', () => {
+        return request(app)
+          .del("/api/comments/cow")
+          .expect(400)
+          .then(({ body: { msg } }) => {
+            expect(msg).toBe("Bad request: Invalid comment ID")
+          })
+      })
+  });
 })
