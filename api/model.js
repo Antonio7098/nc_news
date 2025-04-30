@@ -40,7 +40,6 @@ function selectArticleComments(articleId) {
 }
 function insertIntoComments(articleId, username, body, next) {
     const checkArticle = selectArticle(articleId)
-    console.log(articleId, body, username)
     const addComment = db.query(`INSERT INTO comments (article_id, body, author) VALUES ($1, $2, $3) RETURNING *`, [articleId, body, username])
     return Promise.all([addComment, checkArticle])
         .then((res) => {
@@ -48,9 +47,22 @@ function insertIntoComments(articleId, username, body, next) {
             return comment
         })
         .catch((err) => {
-            console.log(err, "<----------- IN moel")
             next(err)
         })
 }
 
-module.exports = {selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments}
+function updateArticleVotes(articleId, increment, next) {
+    const checkArticle = selectArticle(articleId)
+    const updateVotes = db.query(`UPDATE articles SET votes = votes + $2 WHERE article_id = $1 RETURNING *`, [articleId, increment])
+    return Promise.all([updateVotes, checkArticle])
+        .then((res) => {
+            const article = res[0].rows[0]
+            return article
+        })
+        .catch((err) => {
+            console.log(err)
+            next(err)
+        })
+}
+
+module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes }

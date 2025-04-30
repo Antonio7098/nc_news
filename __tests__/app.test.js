@@ -35,7 +35,7 @@ describe('Bad path error', () => {
 });
 
 describe("GET /api/topics", () => {
-  describe('Behaviour', () => {
+  describe('Happy path', () => {
     test("200: Responds with an object containing all topics", () => {
       return request(app)
         .get("/api/topics")
@@ -55,7 +55,7 @@ describe("GET /api/topics", () => {
 })
 
 describe("GET /api/articles/:article_id", () => {
-  describe('Behaviour', () => {
+  describe('Happy path', () => {
     test("200: Responds with an the correct article", () => {
       return request(app)
         .get("/api/articles/1")
@@ -75,7 +75,7 @@ describe("GET /api/articles/:article_id", () => {
       })
     })
 
-  describe('Error handling', () => {
+  describe('Sad path', () => {
     test('404: No article with that id', () => {
       return request(app)
         .get("/api/articles/1000000")
@@ -97,7 +97,7 @@ describe("GET /api/articles/:article_id", () => {
 })
 
 describe('"GET /api/articles"', () => {
-  describe('Behaviour', () => {
+  describe('Happy path', () => {
     test('200: Returns array of all articles', () => {
       return request(app)
       .get("/api/articles")
@@ -123,7 +123,7 @@ describe('"GET /api/articles"', () => {
 });
 
 describe('"GET /api/articles/:article_id/comments"', () => {
-  describe('Behaviour', () => {
+  describe('Happy path', () => {
     test('200: Returns array of all comments for that article', () => {
       return request(app)
       .get("/api/articles/1/comments")
@@ -145,7 +145,7 @@ describe('"GET /api/articles/:article_id/comments"', () => {
     });
   });
 
-  describe('Error handling', () => {
+  describe('Sad path', () => {
     test('404: No article with that id', () => {
       return request(app)
         .get("/api/articles/1000000/comments")
@@ -167,7 +167,7 @@ describe('"GET /api/articles/:article_id/comments"', () => {
 })
 
 describe('"POST /api/articles/:article_id/comments"', () => {
-  describe('Behaviour', () => {
+  describe('Happy path', () => {
     test('200: Returns the comment', () => {
       return request(app)
       .post("/api/articles/1/comments")
@@ -177,7 +177,6 @@ describe('"POST /api/articles/:article_id/comments"', () => {
       })
       .expect(201)
       .then(({ body: { comment } }) => {
-        console.log("---------------- 1 ---------------------")
         expect(comment).toEqual(expect.objectContaining({
           article_id: 1,
           body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
@@ -197,7 +196,6 @@ describe('"POST /api/articles/:article_id/comments"', () => {
       })
       .expect(201)
       .then(() => {
-        console.log("---------------------- 2 ----------------------------")
         return request(app)
         .get("/api/articles/1/comments")
         .expect(200)
@@ -214,7 +212,7 @@ describe('"POST /api/articles/:article_id/comments"', () => {
     })
   })
 
-    describe('Error handling', () => {
+    describe('Sad path', () => {
       test('404: No article with that id', () => {
         return request(app)
         .post("/api/articles/1000/comments")
@@ -265,5 +263,97 @@ describe('"POST /api/articles/:article_id/comments"', () => {
           expect(msg).toBe("Username not found")
         })
     })
+  })
+})
+
+describe('"PATCH /api/articles/:article_id"', () => {
+  describe('Happy path', () => {
+    test("200: Returns updated article", () => {
+      return request(app)
+      .get("/api/articles/1")
+      .expect(200)
+      .then(({ body: { article } }) => {
+        const old_votes = article.votes
+        return request(app)
+          .patch("/api/articles/1")
+          .send({inc_votes: 1})
+          .expect(200)
+          .then(({ body: { article } }) => {
+            expect(article).toEqual(expect.objectContaining({
+              "article_id": 1,
+              "votes": old_votes + 1
+            }))
+        })
+      })
+    })
+
+    test("200: Updates the article", () => {
+      // Checking votes before
+      return request(app)
+      .get("/api/articles/1")
+      .expect(200)
+      .then(({ body: { article } }) => {
+        const old_votes = article.votes
+        // Updating votes by one
+        return request(app)
+          .patch("/api/articles/1")
+          .send({inc_votes: 1})
+          .expect(200)
+          .then(() => {
+            // Checking votes after update
+            return request(app)
+            .get("/api/articles/1")
+            .expect(200)
+            .then(({ body: { article } }) => {
+              expect(article).toEqual(expect.objectContaining({
+                "article_id": 1,
+                "votes": old_votes + 1
+              }))
+        })
+      })
+    })
+    })
+  })
+
+  describe.only('Sad path', () => {
+    test('404: No article with that id', () => {
+      return request(app)
+        .patch("/api/articles/1000000")
+        .send({inc_votes: 1})
+        .expect(404)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("No article found with that ID")
+        })
+      })
+
+      test('400: Bad article ID', () => {
+        return request(app)
+          .patch("/api/articles/cow")
+          .send({inc_votes: 1})
+          .expect(400)
+          .then(({ body: { msg } }) => {
+            expect(msg).toBe("Bad request")
+          })
+      })
+
+      test("400: Missing required fields", () => {
+        return request(app)
+          .patch("/api/articles/1")
+          .send({})
+          .expect(400)
+          .then(({ body: { msg } }) => {
+            expect(msg).toBe("Bad request: Missing required fields")
+          })
+      })
+
+      test("400: Invalid inc_votes type", () => {
+        return request(app)
+          .patch("/api/articles/1")
+          .send({ inc_votes: "not a number" })
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).toBe("Bad request: Invalid input format");
+          })
+      })
   })
 })
