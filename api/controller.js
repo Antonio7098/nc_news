@@ -1,5 +1,5 @@
 const endpointsJson = require("../endpoints.json")
-const { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers } = require("./model")
+const { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser } = require("./model")
 // #1 Get documentation detailing all of the available API endpoints 
 function getEndpoints(req, res) {
     res.status(200).send({endpoints: endpointsJson})
@@ -83,11 +83,21 @@ function deleteComment(req, res, next) {
         .catch(next)
 }
 
-function getUsers(req, res, next) {
-    return selectUsers(next)
+function getUsers(req, res) {
+    return selectUsers()
         .then((users) => {
             res.status(200).send({users})
         })
 }
 
-module.exports = { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers }
+function getUser(req, res, next) {
+    const {username} = req.params
+
+    return selectUser(username)
+        .then((user) => {
+            res.status(200).send({user})
+        })
+        .catch(next)
+}
+
+module.exports = { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers, getUser }

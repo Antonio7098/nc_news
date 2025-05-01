@@ -1,5 +1,5 @@
 const express = require('express')
-const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers } = require("./controller")
+const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers, getUser } = require("./controller")
 
 // Setting up the app and specifying that we want to parse get requests
 const app = express()
@@ -33,6 +33,9 @@ app.delete("/api/comments/:comment_id", deleteComment)
 
 // Get users
 app.get("/api/users", getUsers)
+
+// Get user
+app.get("/api/users/:username", getUser)
 
 // ------------------------------------------- Errors --------------------------------------------------
 
