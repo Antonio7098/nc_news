@@ -230,6 +230,34 @@ describe('"GET /api/articles"', () => {
         });
       });
     });
+
+    describe('Limit and page', () => {
+      describe('Happy path', () => {
+        test('200: responds with an object with the correect number of articles under key articles, and the total count under key total_count', () => {
+          return request(app)
+          .get("/api/articles")
+          .query({limit: 10, page: 2})
+          .expect(200)
+          .then(({ body: { articles } }) => {
+            expect(Array.isArray(articles)).toBe(true)
+            expect(articles.length).toBeGreaterThan(0)
+            articles.forEach((article) => {
+              expect(article).toEqual(expect.objectContaining({
+                author: expect.any(String),
+                title: expect.any(String),
+                article_id: expect.any(Number),
+                topic: expect.any(String),
+                created_at: expect.any(String), 
+                votes: expect.any(Number),
+                article_img_url: expect.any(String),
+                comment_count: expect.any(Number)
+              }))
+            })
+            expect(articles).toBeSortedBy('created_at', {descending: true})
+          })
+        });
+      });
+    });
   });
 
   describe('Error handling', () => {
@@ -393,7 +421,7 @@ describe('"POST /api/articles/:article_id/comments"', () => {
         })
         .expect(404)
         .then(({ body: { msg } }) => {
-          expect(msg).toBe("Username not found")
+          expect(msg).toBe("Not found: User not found")
         })
     })
   })
@@ -642,7 +670,7 @@ describe("GET /api/users", () => {
   });
 })
 
-describe.only('"POST /api/articles"', () => {
+describe('"POST /api/articles"', () => {
   describe('Happy path', () => {
     test('200: responds with an object containing posted article under the key article', () => {
         return request(app)
