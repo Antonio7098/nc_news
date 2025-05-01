@@ -257,8 +257,6 @@ describe('"GET /api/articles"', () => {
   });
 });
 
-
-
 describe('"GET /api/articles/:article_id/comments"', () => {
   describe('Happy path', () => {
     test('200: Returns array of all comments for that article', () => {
@@ -446,9 +444,9 @@ describe('"PATCH /api/articles/:article_id"', () => {
                 "article_id": 1,
                 "votes": old_votes + 1
               }))
-        })
+            })
+          })
       })
-    })
     })
   })
 
@@ -485,50 +483,115 @@ describe('"PATCH /api/articles/:article_id"', () => {
 
       test("400: Invalid inc_votes type", () => {
         return request(app)
-          .patch("/api/articles/1")
-          .send({ inc_votes: "not a number" })
-          .expect(400)
-          .then(({ body }) => {
-            expect(body.msg).toBe("Bad request: Invalid input format");
-          })
+        .patch("/api/articles/1")
+        .send({ inc_votes: "not a number" })
+        .expect(400)
+        .then(({ body }) => {
+          expect(body.msg).toBe("Bad request: Invalid input format");
+        })
       })
   })
 })
+
 
 describe('DELETE /api/comments/:comment_id', () => {
   describe('Happy path', () => {
     test('204: successfully deleted', () => {
       return request(app)
-        .del("/api/comments/1")
-        .expect(204)
-        .then(() => {
-          return db.query("SELECT * FROM comments WHERE comment_id = $1", [1])
-            .then((res) => {
-              expect(res.rows.length).toBe(0)
-            })
+      .del("/api/comments/1")
+      .expect(204)
+      .then(() => {
+        return db.query("SELECT * FROM comments WHERE comment_id = $1", [1])
+        .then((res) => {
+          expect(res.rows.length).toBe(0)
         })
-  
+      })
+      
     })
-  })
+})
+
+describe('Sad path', () => {
+  test('404: No comment with that id', () => {
+    return request(app)
+    .del("/api/comments/10000000")
+    .expect(404)
+    .then(({ body: { msg } }) => {
+      expect(msg).toBe("No comment found with that ID")
+      })
+    })
+    
+    test('400: Bad article ID', () => {
+      return request(app)
+      .del("/api/comments/cow")
+      .expect(400)
+      .then(({ body: { msg } }) => {
+        expect(msg).toBe("Bad request: Invalid comment ID")
+      })
+    })
+  });
+})
+
+describe('PATCH /api/commets/:comment_id', () => {
+  describe('Happy path', () => {
+    test('200: responds with an object that has the updated comment under a key of comment', () => {
+      return db.query(`SELECT * FROM comments WHERE comment_id = $1`, [1])
+        .then(({ rows }) => {
+          const comment = rows[0]
+          const old_votes = comment.votes
+          return request(app)
+            .patch("/api/comments/1")
+            .send({inc_votes: 1})
+            .expect(200)
+            .then(({ body: { comment } }) => {
+              expect(comment).toEqual(expect.objectContaining({
+                "comment_id": 1,
+                "votes": old_votes + 1
+              }))
+          })
+        })
+    })
+  });
 
   describe('Sad path', () => {
     test('404: No comment with that id', () => {
-      return request(app)
-        .del("/api/comments/10000000")
-        .expect(404)
-        .then(({ body: { msg } }) => {
-          expect(msg).toBe("No comment found with that ID")
-        })
+    return request(app)
+      .patch("/api/comments/1000000")
+      .send({inc_votes: 1})
+      .expect(404)
+      .then(({ body: { msg } }) => {
+        expect(msg).toBe("Not found: No comment found with that ID")
       })
+    })
 
-      test('400: Bad article ID', () => {
-        return request(app)
-          .del("/api/comments/cow")
-          .expect(400)
-          .then(({ body: { msg } }) => {
-            expect(msg).toBe("Bad request: Invalid comment ID")
-          })
+    test('400: Bad comment ID', () => {
+      return request(app)
+        .patch("/api/comments/cow")
+        .send({inc_votes: 1})
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request")
+        })
+    })
+
+    test("400: Missing required fields", () => {
+      return request(app)
+        .patch("/api/comments/1")
+        .send({})
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request: Missing required fields")
+        })
+    })
+
+    test("400: Invalid inc_votes type", () => {
+      return request(app)
+      .patch("/api/comments/1")
+      .send({ inc_votes: "not a number" })
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request: Invalid input format");
       })
+    });
   });
 })
 
@@ -552,7 +615,7 @@ describe("GET /api/users", () => {
     })
   })
 
-  describe.only('Get user by username', () => {
+  describe('Get user by username', () => {
     describe('Happy path', () => {
       test('200: Responds with an object that has the correct user at the key user', () => {
         return request(app)

@@ -1,5 +1,5 @@
 const endpointsJson = require("../endpoints.json")
-const { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser } = require("./model")
+const { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser, incrementCommentVotes } = require("./model")
 // #1 Get documentation detailing all of the available API endpoints 
 function getEndpoints(req, res) {
     res.status(200).send({endpoints: endpointsJson})
@@ -100,4 +100,27 @@ function getUser(req, res, next) {
         .catch(next)
 }
 
-module.exports = { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers, getUser }
+function patchCommentVotes(req, res, next) {
+    const id = req.params.comment_id
+    const increment = req.body.inc_votes
+    
+    if(!increment) {
+        next({
+            missingField: true
+        })
+    }
+
+    if(isNaN(increment)) {
+        next({
+            invalidInputFormat: true
+        })
+    }
+
+    return incrementCommentVotes(id, increment)
+        .then((comment) => {
+            return res.status(200).send({comment})
+        })
+        .catch(next)
+}
+
+module.exports = { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers, getUser, patchCommentVotes }

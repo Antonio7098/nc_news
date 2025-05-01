@@ -142,4 +142,14 @@ function selectUser(username) {
         })
 }
 
-module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser }
+function incrementCommentVotes(id, increment) {
+    return db.query(`UPDATE comments SET votes = votes + $1 WHERE comment_id = $2 RETURNING *`, [increment, id])
+        .then((res) => {
+            const comment = res.rows[0]
+            if (!comment) {
+                return Promise.reject({status: 404, msg: "Not found: No comment found with that ID"})
+            }
+            return comment
+        })
+}
+module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser, incrementCommentVotes }
