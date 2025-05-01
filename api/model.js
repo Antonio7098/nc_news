@@ -94,9 +94,6 @@ function insertIntoComments(articleId, username, body, next) {
             const comment = res[0].rows[0]
             return comment
         })
-        .catch((err) => {
-            next(err)
-        })
 }
 
 function updateArticleVotes(articleId, increment, next) {
