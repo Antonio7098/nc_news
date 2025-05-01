@@ -22,12 +22,12 @@ function getArticle(req, res, next) {
 }
 
 function getArticles(req, res, next) {
-    let { sort_by: sortBy, order } = req.query
+    let { sort_by: sortBy, order, topic } = req.query
 
     sortBy = sortBy || 'created_at'
     order = order ? order.toUpperCase() : 'DESC'
 
-    return selectArticles(sortBy, order)
+    return selectArticles(sortBy, order, topic)
         .then((articles) => {
             return res.status(200).send({articles})
         })
