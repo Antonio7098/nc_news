@@ -120,7 +120,7 @@ function deleteCommentModel(commentId, next) {
         .catch(next)
 }
 
-function selectUsers(next) {
+function selectUsers() {
     return db.query(`SELECT * FROM users`)
         .then((res) => {
             const users = res.rows
@@ -128,4 +128,18 @@ function selectUsers(next) {
         })
 }
 
-module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers }
+function selectUser(username) {
+    return db.query(`SELECT * FROM users WHERE username = $1`, [username])
+        .then((res) => {
+            let user = res.rows[0]
+            if (!user) {
+                return Promise.reject({
+                    status: 404,
+                    msg: "Not found: User not found"
+                })
+            }
+            return user
+        })
+}
+
+module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser }

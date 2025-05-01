@@ -551,4 +551,32 @@ describe("GET /api/users", () => {
         })
     })
   })
+
+  describe.only('Get user by username', () => {
+    describe('Happy path', () => {
+      test('200: Responds with an object that has the correct user at the key user', () => {
+        return request(app)
+        .get("/api/users/butter_bridge")
+        .expect(200)
+        .then(({ body: { user } }) => {
+          expect(user).toEqual(expect.objectContaining({
+            username: "butter_bridge",
+            name: expect.any(String),
+            avatar_url: expect.any(String),
+          }))
+        })
+      });
+    });
+
+    describe('Sad path', () => {
+      test('404: No user found', () => {
+        return request(app)
+        .get("/api/users/not_a_user")
+        .expect(404)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Not found: User not found")
+        })
+      });
+    });
+  });
 })
