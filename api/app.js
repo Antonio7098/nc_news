@@ -1,5 +1,5 @@
 const express = require('express')
-const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers, getUser, patchCommentVotes } = require("./controller")
+const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers, getUser, patchCommentVotes, postArticle } = require("./controller")
 
 // Setting up the app and specifying that we want to parse get requests
 const app = express()
@@ -40,6 +40,9 @@ app.get("/api/users/:username", getUser)
 // Update comment votes
 app.patch("/api/comments/:comment_id", patchCommentVotes)
 
+// Add article
+app.post("/api/articles", postArticle)
+
 // ------------------------------------------- Errors --------------------------------------------------
 
 // Catch all invalid endpoints
@@ -55,10 +58,22 @@ app.use((err, req, res, next) => {
     res.status(status).send({status, msg})
   }
   else if (err.code === "23503") {
-    const status = 404
-    const msg = "Username not found"
-    res.status(status).send({status, msg})
+    // User not found
+    if (/author/.test(err.constraint)) {
+      res.status(404).send({
+        status: 404,
+        msg: "Not found: User not found"
+      })
+    }
+    // Topic nto found
+    else if (/topic/.test(err.constraint)) {
+      res.status(404).send({
+        status: 404,
+        msg: "Not found: Topic not found"
+      })
+    }
   }
+  
   else {
     next(err)
   }

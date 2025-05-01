@@ -152,4 +152,18 @@ function incrementCommentVotes(id, increment) {
             return comment
         })
 }
-module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser, incrementCommentVotes }
+
+function insertArticle(username, title, body, topic, article_img_url) {
+    return db.query(`INSERT INTO articles (title, topic, author, body, article_img_url) VALUES ($1,$2, $3, $4, $5) RETURNING *`, [title, topic, username, body, article_img_url])
+        .then((res) => {
+            const article = res.rows[0]
+            return db.query(`SELECT COUNT (article_id) FROM comments WHERE article_id = $1`, [article.article_id])
+                .then((res) => {
+                    const comment_count = res.rows[0].comment_count
+                    article.comment_count = comment_count
+                    return article
+                })
+        })
+}
+
+module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser, incrementCommentVotes, insertArticle }

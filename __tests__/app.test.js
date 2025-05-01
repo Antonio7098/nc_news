@@ -227,11 +227,9 @@ describe('"GET /api/articles"', () => {
                 expect(msg).toBe("Bad request: Invalid topic")
               })
           });
-          });
         });
       });
-
-
+    });
   });
 
   describe('Error handling', () => {
@@ -643,3 +641,141 @@ describe("GET /api/users", () => {
     });
   });
 })
+
+describe.only('"POST /api/articles"', () => {
+  describe('Happy path', () => {
+    test('200: responds with an object containing posted article under the key article', () => {
+        return request(app)
+        .post("/api/articles")
+        .send({
+          author: 'butter_bridge',
+          title: 'Test Article Title',
+          body: 'This is the body of the test article.',
+          topic: 'paper'
+        })
+        .expect(201)
+        .then(({ body: { article } }) => {
+          expect(article).toEqual(
+            expect.objectContaining({
+              article_id: expect.any(Number),
+              article_img_url: expect.any(String),
+              author: "butter_bridge",
+              body: "This is the body of the test article.",
+              created_at: expect.any(String),
+              title: "Test Article Title",
+              topic: "paper",
+              votes: 0,
+            })
+          );
+        })
+      })
+    });
+
+  describe('Sad path', () => {
+    test("400: Missing required fields", () => {
+      return request(app)
+        .post("/api/articles")
+        .send({
+          author: 'butter_bridge',
+          body: 'This is the body of the test article.',
+          topic: 'paper'
+        })
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request: Missing required fields")
+        })
+    })
+
+    test('404: No user found', () => {
+      return request(app)
+        .post("/api/articles")
+        .send({
+          author: 'not_a_user',
+          title: 'Test Article Title',
+          body: 'This is the body of the test article.',
+          topic: 'paper'
+        })
+        .expect(404)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Not found: User not found")
+        })
+    });
+
+    test('400: bad topic', () => {
+      const topic = "war"
+      return request(app)
+        .post("/api/articles")
+        .send({
+          author: 'not_a_user',
+          title: 'Test Article Title',
+          body: 'This is the body of the test article.',
+          topic: 'not_a_topic'
+        })
+        .expect(404)
+        .then(({body: {msg}}) => {
+          expect(msg).toBe("Not found: Topic not found")
+        })
+    });
+
+    test("400: Invalid data types in request body - author as number", () => {
+      return request(app)
+        .post("/api/articles")
+        .send({
+          author: 123, 
+          title: "Test Article Title",
+          body: "This is the body of the test article.",
+          topic: "paper",
+        })
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request: Invalid input format")
+        })
+    })
+    
+    test("400: Invalid data types in request body - title as number", () => {
+        return request(app)
+          .post("/api/articles")
+          .send({
+            author: 'butter_bridge',
+            title: 12345,
+            body: "This is the body of the test article.",
+            topic: "paper",
+          })
+          .expect(400)
+          .then(({ body: { msg } }) => {
+            expect(msg).toBe("Bad request: Invalid input format");
+          });
+      });
+    
+      test("400: Invalid data types in request body - body as number", () => {
+        return request(app)
+          .post("/api/articles")
+          .send({
+            author: 'butter_bridge',
+            title: 'Valid Title',
+            body: 12345,
+            topic: "paper",
+          })
+          .expect(400)
+          .then(({ body: { msg } }) => {
+            expect(msg).toBe("Bad request: Invalid input format");
+          })
+      });
+    
+      test("400: Invalid data types in request body - topic as number", () => {
+        return request(app)
+          .post("/api/articles")
+          .send({
+            author: 'butter_bridge',
+            title: 'Valid Title',
+            body: 'Valid Body',
+            topic: 12345,
+          })
+          .expect(400)
+          .then(({ body: { msg } }) => {
+            expect(msg).toBe("Bad request: Invalid input format")
+          })
+      })
+    
+  });
+});
