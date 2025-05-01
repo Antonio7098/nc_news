@@ -164,6 +164,74 @@ describe('"GET /api/articles"', () => {
             })
           })
       });
+
+      describe('Filter by topic', () => {
+        describe('Happy path', () => {
+          test('200: articles filtered by topi', () => {
+            const topics = ['mitch', 'cats', 'paper']
+            const queries = topics.map((topic) => 
+              request(app)
+              .get("/api/articles")
+              .query({topic})
+              .expect(200)
+            )
+
+            return Promise.all(queries)
+              .then((results) => {
+                  results.forEach (({ body: { articles } }, index) => {
+                    expect(Array.isArray(articles)).toBe(true)
+                    const topic = topics[index]
+                    
+                    articles.forEach((article) => {
+                      expect(article).toEqual(expect.objectContaining({
+                        author: expect.any(String),
+                        title: expect.any(String),
+                        article_id: expect.any(Number),
+                        topic: topic,
+                        created_at: expect.any(String), 
+                        votes: expect.any(Number),
+                        article_img_url: expect.any(String),
+                        comment_count: expect.any(Number)
+                      }))
+                    })
+                })
+              })
+            });
+        });
+
+        describe('Edge cases', () => {
+          test('200: no topics of that type', () => {
+            const slug = 'test_topic';
+            const description = 'Description for a test topic';
+            const img_url = ""
+
+            return db.query('INSERT INTO topics (slug, description, img_url) VALUES ($1, $2, $3);', [slug, description, img_url])
+              .then(() => {
+                return request(app)
+                  .get("/api/articles")
+                  .query({topic: slug})
+                  .expect(200)
+                  .then(({body: {articles}}) => expect(articles).toEqual([]))
+              })
+          });
+        });
+
+        describe('Error handling', () => {
+          test('400: bad topic', () => {
+            const topic = "war"
+            return request(app)
+              .get("/api/articles")
+              .query({topic: topic})
+              .expect(400)
+              .then(({body: {msg}}) => {
+                expect(msg).toBe("Bad request: Invalid topic")
+              })
+          });
+          });
+        });
+      });
+
+
   });
 
   describe('Error handling', () => {
@@ -188,6 +256,8 @@ describe('"GET /api/articles"', () => {
     })
   });
 });
+
+
 
 describe('"GET /api/articles/:article_id/comments"', () => {
   describe('Happy path', () => {
@@ -440,7 +510,6 @@ describe('DELETE /api/comments/:comment_id', () => {
   
     })
   })
-})
 
   describe('Sad path', () => {
     test('404: No comment with that id', () => {

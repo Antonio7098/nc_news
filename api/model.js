@@ -20,7 +20,7 @@ function selectArticle(articleId) {
         })
 }
 
-function selectArticles(sortBy, order) {
+function selectArticles(sortBy, order, topic) {
     const validColumns = ['article_id', 'title', 'topic', 'author', 'created_at', 'votes', 'article_img_url']
     const validOrders = ['ASC', 'DESC']
 
@@ -31,14 +31,48 @@ function selectArticles(sortBy, order) {
         return Promise.reject({ status: 400, msg: "Bad request: Invalid order" });
     }
 
-    return db.query(`SELECT articles.author, articles.title, articles.article_id, articles.topic, articles.created_at, articles.votes, articles.article_img_url, COUNT(comments.comment_id)::INT AS comment_count FROM articles LEFT JOIN  comments ON articles.article_id = comments.article_id GROUP BY articles.article_id ORDER BY articles.${sortBy} ${order}`)
-        .then((res) => {
-            const articles = res.rows
-            return articles
-        })
-        .catch((err) => {
-            console.log(err)
-        })
+    let topicValidationPromise = Promise.resolve()
+
+    if (topic) {
+        topicValidationPromise = db.query("SELECT slug FROM topics WHERE slug = $1", [topic])
+            .then(({ rows }) => {
+                if (rows.length === 0) {
+                    return Promise.reject({ status: 400, msg: "Bad request: Invalid topic" })
+                }
+            })
+    }
+
+    return topicValidationPromise.then(() => {
+        const queryValues = []
+        let queryStr = `
+            SELECT
+                articles.author,
+                articles.title,
+                articles.article_id,
+                articles.topic,
+                articles.created_at,
+                articles.votes,
+                articles.article_img_url,
+                COUNT(comments.comment_id)::INT AS comment_count
+            FROM articles
+            LEFT JOIN comments ON articles.article_id = comments.article_id
+        `
+
+        if (topic) {
+            queryStr += ` WHERE articles.topic = $1`
+            queryValues.push(topic)
+        }
+
+        queryStr += `
+            GROUP BY articles.article_id
+            ORDER BY articles.${sortBy} ${order.toUpperCase()};`
+
+        return db.query(queryStr, queryValues)
+    })
+    .then((res) => {
+        const articles = res.rows
+        return articles
+    })
 }
 
 function selectArticleComments(articleId, sortBy, order) {
