@@ -181,4 +181,15 @@ function insertArticle(username, title, body, topic, article_img_url) {
         })
 }
 
-module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser, incrementCommentVotes, insertArticle }
+function insertTopic(slug, description) {
+    return db.query(`INSERT INTO topics (slug, description) VALUES ($1, $2) RETURNING *`, [slug, description])
+        .then((res) => {
+            const topic = res.rows[0]
+            return topic
+        })
+        .catch((err) => {
+            console.log(err)
+        })
+}
+
+module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser, incrementCommentVotes, insertArticle, insertTopic }
