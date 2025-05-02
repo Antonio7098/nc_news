@@ -167,7 +167,7 @@ describe('"GET /api/articles"', () => {
 
       describe('Filter by topic', () => {
         describe('Happy path', () => {
-          test('200: articles filtered by topi', () => {
+          test('200: articles filtered by topic', () => {
             const topics = ['mitch', 'cats', 'paper']
             const queries = topics.map((topic) => 
               request(app)
@@ -221,7 +221,7 @@ describe('"GET /api/articles"', () => {
             const topic = "war"
             return request(app)
               .get("/api/articles")
-              .query({topic: topic})
+              .query({topic: "topic"})
               .expect(400)
               .then(({body: {msg}}) => {
                 expect(msg).toBe("Bad request: Invalid topic")
@@ -230,35 +230,99 @@ describe('"GET /api/articles"', () => {
         });
       });
     });
+  });
 
-    describe('Limit and page', () => {
-      describe('Happy path', () => {
-        test('200: responds with an object with the correect number of articles under key articles, and the total count under key total_count', () => {
+  describe('Limit and page', () => {
+    describe('Happy path', () => {
+      let totalCount
+      let first10
+      test("200: responds with 10 articles by default", () => {
+        return request(app)
+          .get("/api/articles")
+          .expect(200)
+          .then(({ body }) => {
+            totalCount = body.total_count
+            first10 = body.articles
+            
+            expect(body.articles).toHaveLength(10)
+            expect(body.total_count).toBeGreaterThan(10)
+          });
+      });
+    
+      test("200: accepts a limit query which limits the number of responses", () => {
+        return request(app)
+          .get("/api/articles")
+          .query({limit: 5})
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.articles).toHaveLength(5)
+            expect(body.total_count).toBe(totalCount)
+          })
+      })
+    
+      test("200: accepts a page query which offsets the responses", () => {
+        return request(app)
+          .get("/api/articles")
+          .query({ limit: 5, page: 1 })
+          .expect(200)
+          .then(({ body }) => {
+            const first5 = body.articles;
+            expect(first5).toHaveLength(5);
+
+            return request(app)
+              .get("/api/articles")
+              .query({ limit: 5, page: 2 })
+              .expect(200)
+              .then(({ body }) => {
+                const second5 = body.articles
+                expect(second5).toHaveLength(5)
+
+                const firstIds = first5.map((article) => article.article_id)
+                const secondIds = second5.map((article) => article.article_id)
+                secondIds.forEach((id) => {
+                  expect(firstIds).not.toContain(id)
+                });
+              });
+          });
+      });
+
+      test("200: pagination works alongside filters", () => {
+        return request(app)
+          .get("/api/articles")
+          .query({topic: "mitch", limit: 10})
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.articles.length).toBe(10)
+            body.articles.forEach(article => {
+              expect(article.topic).toBe("mitch")
+            })
+            expect(body.total_count).toBe(12)
+          })
+      })
+    
+      describe('Sad path', () => {
+        test("400: responds with error for non-numeric limit", () => {
           return request(app)
           .get("/api/articles")
-          .query({limit: 10, page: 2})
-          .expect(200)
-          .then(({ body: { articles } }) => {
-            expect(Array.isArray(articles)).toBe(true)
-            expect(articles.length).toBeGreaterThan(0)
-            articles.forEach((article) => {
-              expect(article).toEqual(expect.objectContaining({
-                author: expect.any(String),
-                title: expect.any(String),
-                article_id: expect.any(Number),
-                topic: expect.any(String),
-                created_at: expect.any(String), 
-                votes: expect.any(Number),
-                article_img_url: expect.any(String),
-                comment_count: expect.any(Number)
-              }))
+            .query({limit: "non_numeric_limit"})
+            .expect(400)
+            .then(({ body }) => {
+              expect(body.msg).toBe("Bad request: Invalid input format");
             })
-            expect(articles).toBeSortedBy('created_at', {descending: true})
+        })
+        
+        test("400: responds with error for non-numeric page", () => {
+          return request(app)
+          .get("/api/articles")
+          .query({page: "non_numeric_page"})
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).toBe("Bad request: Invalid input format");
           })
-        });
+        })
       });
-    });
   });
+});
 
   describe('Error handling', () => {
     test("400: Invalid column name", () => {
