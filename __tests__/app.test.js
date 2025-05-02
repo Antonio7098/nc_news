@@ -81,7 +81,7 @@ describe("GET /api/articles/:article_id", () => {
         .get("/api/articles/1000000")
         .expect(404)
         .then(({ body: { msg } }) => {
-          expect(msg).toBe("No article found with that ID")
+          expect(msg).toBe("Not found: Article not found")
         })
       })
 
@@ -371,7 +371,7 @@ describe('"GET /api/articles/:article_id/comments"', () => {
         .get("/api/articles/1000000/comments")
         .expect(404)
         .then(({ body: { msg } }) => {
-          expect(msg).toBe("No article found with that ID")
+          expect(msg).toBe("Not found: Article not found")
         })
     })
 
@@ -489,7 +489,7 @@ describe('"POST /api/articles/:article_id/comments"', () => {
         })
           .expect(404)
           .then(({ body: { msg } }) => {
-            expect(msg).toBe("No article found with that ID")
+            expect(msg).toBe("Not found: Article not found")
           })
       })
   
@@ -589,7 +589,7 @@ describe('"PATCH /api/articles/:article_id"', () => {
         .send({inc_votes: 1})
         .expect(404)
         .then(({ body: { msg } }) => {
-          expect(msg).toBe("No article found with that ID")
+          expect(msg).toBe("Not found: Article not found")
         })
       })
 
@@ -971,6 +971,54 @@ describe('POST /api/topice', () => {
         .expect(400)
         .then(({ body: { msg } }) => {
           expect(msg).toBe("Bad request: Invalid input format")
+        })
+    })
+  });
+});
+
+describe('DELETE /api/articles/:article_id', () => {
+  describe('Happy path', () => {
+    test("204: successfully deletes the article", () => {
+      return request(app)
+        .delete("/api/articles/1")
+        .expect(204)
+        .then(() => {
+          db.query('SELECT * FROM articles WHERE article_id = 1')
+            .then((res) => {
+              expect(res.rows).toHaveLength(0)
+            })
+        })
+    });
+
+    test("204: successfully deletes the comments", () => {
+      return request(app)
+        .del("/api/articles/1")
+        .expect(204)
+        .then(() => {
+          db.query('SELECT * FROM comments WHERE article_id = 1')
+            .then((res) => {
+              expect(res.rows).toHaveLength(0)
+            })
+        })
+    });
+  });
+
+  describe('Sad path', () => {
+    test('404: No article with that id', () => {
+      return request(app)
+        .del("/api/articles/1000000")
+        .expect(404)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Not found: Article not found")
+        })
+    })
+
+    test('400: Invalid article ID', () => {
+      return request(app)
+        .del("/api/articles/id")
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request")
         })
     })
   });
