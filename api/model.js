@@ -13,7 +13,7 @@ function selectArticle(articleId) {
     return db.query("SELECT * FROM articles WHERE article_id = $1", [articleId])
         .then((res) => {
             if (res.rows.length === 0) {
-                return Promise.reject({ status: 404, msg: "No article found with that ID" });
+                return Promise.reject({ status: 404, msg: "Not found: Article not found" });
             }
             const article = res.rows[0]
             return article
@@ -192,4 +192,17 @@ function insertTopic(slug, description) {
         })
 }
 
-module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser, incrementCommentVotes, insertArticle, insertTopic }
+function deleteArticleModel(id) {
+    return db.query(`SELECT * FROM articles WHERE article_id = $1`, [id])
+        .then((res) => {
+            if (res.rows.length === 0) {
+                return Promise.reject({
+                    status: 404, 
+                    msg: "Not found: Article not found" 
+                })
+            }
+            db.query(`DELETE FROM articles WHERE article_id = $1`, [id])
+        })
+}
+
+module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser, incrementCommentVotes, insertArticle, insertTopic, deleteArticleModel }
