@@ -89,8 +89,9 @@ function selectArticles(sortBy, order, topic, limit, page) {
     })
 }
 
-function selectArticleComments(articleId, sortBy, order) {
-    const selectComments = db.query("SELECT * FROM comments WHERE article_id = $1 ORDER BY created_at ASC", [articleId])
+function selectArticleComments(articleId, limit, page) {
+    const offset = limit * (page - 1)
+    const selectComments = db.query("SELECT * FROM comments WHERE article_id = $1 ORDER BY created_at ASC LIMIT $2 OFFSET $3", [articleId, limit, offset])
     const checkArticle = selectArticle(articleId)
 
     return Promise.all([selectComments, checkArticle])
