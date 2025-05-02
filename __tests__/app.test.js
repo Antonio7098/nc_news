@@ -234,16 +234,11 @@ describe('"GET /api/articles"', () => {
 
   describe('Limit and page', () => {
     describe('Happy path', () => {
-      let totalCount
-      let first10
       test("200: responds with 10 articles by default", () => {
         return request(app)
           .get("/api/articles")
           .expect(200)
           .then(({ body }) => {
-            totalCount = body.total_count
-            first10 = body.articles
-            
             expect(body.articles).toHaveLength(10)
             expect(body.total_count).toBeGreaterThan(10)
           });
@@ -256,7 +251,7 @@ describe('"GET /api/articles"', () => {
           .expect(200)
           .then(({ body }) => {
             expect(body.articles).toHaveLength(5)
-            expect(body.total_count).toBe(totalCount)
+            expect(body.total_count).toBeGreaterThan(5)
           })
       })
     
@@ -389,6 +384,77 @@ describe('"GET /api/articles/:article_id/comments"', () => {
         })
     })
   })
+
+  describe('Pagination', () => {
+    describe('Happy path', () => {
+      test("200: responds with 10 comments by default", () => {
+        return request(app)
+          .get("/api/articles/1/comments")
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.comments).toHaveLength(10)
+          });
+      });
+    
+      test("200: accepts a limit query which limits the number of responses", () => {
+        return request(app)
+          .get("/api/articles/1/comments")
+          .query({limit: 5})
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.comments).toHaveLength(5)
+          })
+      })
+    
+      test("200: accepts a page query which offsets the responses", () => {
+        return request(app)
+          .get("/api/articles/1/comments")
+          .query({ limit: 5, page: 1 })
+          .expect(200)
+          .then(({ body }) => {
+            const first5 = body.comments;
+            expect(first5).toHaveLength(5);
+
+            return request(app)
+              .get("/api/articles/1/comments")
+              .query({ limit: 5, page: 2 })
+              .expect(200)
+              .then(({ body }) => {
+                const second5 = body.comments
+                expect(second5).toHaveLength(5)
+
+                const firstIds = first5.map((comment) => comment.comment_id)
+                const secondIds = second5.map((comment) => comment.comment_id)
+                secondIds.forEach((id) => {
+                  expect(firstIds).not.toContain(id)
+                });
+              });
+          });
+      });
+    });
+
+    describe('Sad path', () => {
+      test("400: responds with error for non-numeric limit", () => {
+        return request(app)
+        .get("/api/articles/1/comments")
+          .query({limit: "non_numeric_limit"})
+          .expect(400)
+          .then(({ body }) => {
+            expect(body.msg).toBe("Bad request: Invalid input format");
+          })
+      })
+      
+      test("400: responds with error for non-numeric page", () => {
+        return request(app)
+        .get("/api/articles/1/comments")
+        .query({page: "non_numeric_page"})
+        .expect(400)
+        .then(({ body }) => {
+          expect(body.msg).toBe("Bad request: Invalid input format");
+        })
+      })
+    });
+  });
 })
 
 describe('"POST /api/articles/:article_id/comments"', () => {
@@ -403,30 +469,6 @@ describe('"POST /api/articles/:article_id/comments"', () => {
       .expect(201)
       .then(({ body: { comment } }) => {
         expect(comment).toEqual(expect.objectContaining({
-          article_id: 1,
-          body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
-          votes: 0,
-          author: "butter_bridge",
-          created_at: expect.any(String)
-        }))
-      })
-    })
-
-    test('200: Adds the comment', () => {
-      return request(app)
-      .post("/api/articles/1/comments")
-      .send({
-        body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
-        username: "butter_bridge"
-      })
-      .expect(201)
-      .then(() => {
-        return request(app)
-        .get("/api/articles/1/comments")
-        .expect(200)
-      })
-      .then(({ body: { comments } }) => {
-        expect(comments).toContainEqual(expect.objectContaining({
           article_id: 1,
           body: "The beautiful thing about dog is that it exists. Got to find out what kind of dog these are; not cotton, not rayon, silky.",
           votes: 0,

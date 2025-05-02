@@ -47,7 +47,18 @@ function getArticles(req, res, next) {
 
 function getArticleComments(req, res, next) {
     const articleId = req.params.article_id
-    return selectArticleComments(articleId)
+    let {limit, page} = req.query
+
+    if((limit && isNaN(limit)) || (page && isNaN(page))) {
+        next({
+            invalidInputFormat: true
+        })
+    }
+
+    limit = limit || 10
+    page = page || 1
+
+    return selectArticleComments(articleId, limit, page)
         .then((comments) => {
             return res.status(200).send({comments})
         })
