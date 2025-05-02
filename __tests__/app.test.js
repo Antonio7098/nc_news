@@ -913,3 +913,65 @@ describe('"POST /api/articles"', () => {
     
   });
 });
+
+describe('POST /api/topice', () => {
+  describe('Happy path', () => {
+    test('201: responds with object with the created topic at key topic', () => {
+      return request(app)
+        .post("/api/topics")
+        .send({
+           "slug": "topic name here",
+          "description": "description here"
+        })
+        .expect(201)
+        .then(({body}) => {
+          const {topic} = body
+          expect(topic).toEqual(expect.objectContaining({
+            "slug": "topic name here",
+            "description": "description here"
+          }))
+
+        })
+    });
+  });
+
+  describe('Sad path', () => {
+    test("400: Missing required fields", () => {
+      return request(app)
+        .post("/api/topics")
+        .send({
+          "slug": "topic name here",
+        })
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request: Missing required fields")
+        })
+    })
+
+    test("400: Invalid data types in request body - slug as number", () => {
+      return request(app)
+        .post("/api/topics")
+        .send({
+           "slug": 101,
+          "description": "description here"
+        })
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request: Invalid input format")
+        })
+    })
+
+    test("400: Invalid data types in request body - body as number", () => {
+      return request(app)
+      .post("/api/topics")
+      .send({
+         "slug": "topic name here",
+        "description": 200
+      })
+        .expect(400)
+        .then(({ body: { msg } }) => {
+          expect(msg).toBe("Bad request: Invalid input format")
+        })
+    })
+  });
+});
