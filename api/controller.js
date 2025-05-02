@@ -22,14 +22,25 @@ function getArticle(req, res, next) {
 }
 
 function getArticles(req, res, next) {
-    let { sort_by: sortBy, order, topic } = req.query
+    let { sort_by: sortBy, order, topic, limit, page } = req.query
 
     sortBy = sortBy || 'created_at'
     order = order ? order.toUpperCase() : 'DESC'
 
-    return selectArticles(sortBy, order, topic)
-        .then((articles) => {
-            return res.status(200).send({articles})
+    if((limit && isNaN(limit)) || (page && isNaN(page))) {
+        next({
+            invalidInputFormat: true
+        })
+    }
+
+    limit = limit || 10
+    page = page || 1
+
+    return selectArticles(sortBy, order, topic, limit, page)
+        .then((result) => {
+            const {articles, totalCount: total_count} = result
+
+            return res.status(200).send({articles, total_count})
         })
         .catch(next)
 } 

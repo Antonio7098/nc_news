@@ -20,8 +20,8 @@ function selectArticle(articleId) {
         })
 }
 
-function selectArticles(sortBy, order, topic) {
-    const validColumns = ['article_id', 'title', 'topic', 'author', 'created_at', 'votes', 'article_img_url']
+function selectArticles(sortBy, order, topic, limit, page) {
+    const validColumns = ['article_id', 'title', 'topic', 'author', 'created_at', 'votes', 'article_img_url', 'comment_count']
     const validOrders = ['ASC', 'DESC']
 
     if (!validColumns.includes(sortBy)) {
@@ -58,20 +58,34 @@ function selectArticles(sortBy, order, topic) {
             LEFT JOIN comments ON articles.article_id = comments.article_id
         `
 
+        let countStr = `SELECT COUNT(*) FROM articles`
+        const countValues = []
+
         if (topic) {
-            queryStr += ` WHERE articles.topic = $1`
+            queryStr += ` WHERE articles.topic = $3`
             queryValues.push(topic)
+
+            countStr += ` WHERE articles.topic = $1`
+            countValues.push(topic)
         }
 
         queryStr += `
             GROUP BY articles.article_id
-            ORDER BY articles.${sortBy} ${order.toUpperCase()};`
+            ORDER BY articles.${sortBy} ${order.toUpperCase()}
+            LIMIT $1 OFFSET $2;`
+        const offset = (page - 1) * limit
+        
+        queryValues.unshift(limit, offset)
 
-        return db.query(queryStr, queryValues)
+        const pageQuery = db.query(queryStr, queryValues)
+        const countQuery = db.query(countStr, countValues)
+
+        return Promise.all([pageQuery, countQuery])
     })
     .then((res) => {
-        const articles = res.rows
-        return articles
+        const articles = res[0].rows
+        const totalCount = Number(res[1].rows[0].count)
+        return {articles, totalCount}
     })
 }
 
