@@ -42,7 +42,7 @@ function getArticles(req, res, next) {
 
             return res.status(200).send({articles, total_count})
         })
-        .catch(next)
+        .catch((err) => {console.log(err, sortBy, order, topic, limit, page ); return next(err)})
 } 
 
 function getArticleComments(req, res, next) {
