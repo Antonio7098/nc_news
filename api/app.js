@@ -1,17 +1,24 @@
 const express = require('express')
-const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers } = require("./controller")
+const { apiRouter, usersRouter, topicsRouter, commentRouter, articleRouter } = require("./routers")
+const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers, getUser, patchCommentVotes, postArticle, postTopic, deleteArticle } = require("./controller")
+
+const cors = require('cors');
 
 // Setting up the app and specifying that we want to parse get requests
 const app = express()
+app.use(cors());
 app.use(express.json())
 
 // ------------------------------------------------- Paths --------------------------------------------------
 
+app.use("/api", apiRouter)
+
+
+
 // #1 Get documentation detailing all of the available API endpoints
 app.get("/api", getEndpoints)
 
-// Get a list of topics
-app.get("/api/topics", getTopics)
+
 
 // Get article by id
 app.get("/api/articles/:article_id", getArticle)
@@ -25,14 +32,35 @@ app.get("/api/articles/:article_id/comments", getArticleComments)
 // Add comment
 app.post("/api/articles/:article_id/comments", addComment)
 
-// Increment votes
+// Update article votes
 app.patch("/api/articles/:article_id", patchArticleVotes)
 
-// Delete comment
-app.delete("/api/comments/:comment_id", deleteComment)
+// Add article
+app.post("/api/articles", postArticle)
 
-// Get users
-app.get("/api/users", getUsers)
+// Deelete article
+app.delete("/api/articles/:article_id", deleteArticle)
+
+
+
+
+// Topics
+apiRouter.use("/topics", topicsRouter)
+
+// Comments
+apiRouter.use("/comments", commentRouter)
+
+
+apiRouter.use("/users", usersRouter);  // Mount the usersRouter on the /users path
+
+
+
+
+
+
+// Users
+
+
 
 // ------------------------------------------- Errors --------------------------------------------------
 
@@ -49,10 +77,22 @@ app.use((err, req, res, next) => {
     res.status(status).send({status, msg})
   }
   else if (err.code === "23503") {
-    const status = 404
-    const msg = "Username not found"
-    res.status(status).send({status, msg})
+    // User not found
+    if (/author/.test(err.constraint)) {
+      res.status(404).send({
+        status: 404,
+        msg: "Not found: User not found"
+      })
+    }
+    // Topic nto found
+    else if (/topic/.test(err.constraint)) {
+      res.status(404).send({
+        status: 404,
+        msg: "Not found: Topic not found"
+      })
+    }
   }
+  
   else {
     next(err)
   }

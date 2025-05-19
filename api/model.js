@@ -13,15 +13,15 @@ function selectArticle(articleId) {
     return db.query("SELECT * FROM articles WHERE article_id = $1", [articleId])
         .then((res) => {
             if (res.rows.length === 0) {
-                return Promise.reject({ status: 404, msg: "No article found with that ID" });
+                return Promise.reject({ status: 404, msg: "Not found: Article not found" });
             }
             const article = res.rows[0]
             return article
         })
 }
 
-function selectArticles(sortBy, order, topic) {
-    const validColumns = ['article_id', 'title', 'topic', 'author', 'created_at', 'votes', 'article_img_url']
+function selectArticles(sortBy, order, topic, limit, page) {
+    const validColumns = ['article_id', 'title', 'topic', 'author', 'created_at', 'votes', 'article_img_url', 'comment_count']
     const validOrders = ['ASC', 'DESC']
 
     if (!validColumns.includes(sortBy)) {
@@ -58,25 +58,40 @@ function selectArticles(sortBy, order, topic) {
             LEFT JOIN comments ON articles.article_id = comments.article_id
         `
 
+        let countStr = `SELECT COUNT(*) FROM articles`
+        const countValues = []
+
         if (topic) {
-            queryStr += ` WHERE articles.topic = $1`
+            queryStr += ` WHERE articles.topic = $3`
             queryValues.push(topic)
+
+            countStr += ` WHERE articles.topic = $1`
+            countValues.push(topic)
         }
 
         queryStr += `
             GROUP BY articles.article_id
-            ORDER BY articles.${sortBy} ${order.toUpperCase()};`
+            ORDER BY articles.${sortBy} ${order.toUpperCase()}
+            LIMIT $1 OFFSET $2;`
+        const offset = (page - 1) * limit
+        
+        queryValues.unshift(limit, offset)
 
-        return db.query(queryStr, queryValues)
+        const pageQuery = db.query(queryStr, queryValues)
+        const countQuery = db.query(countStr, countValues)
+
+        return Promise.all([pageQuery, countQuery])
     })
     .then((res) => {
-        const articles = res.rows
-        return articles
+        const articles = res[0].rows
+        const totalCount = Number(res[1].rows[0].count)
+        return {articles, totalCount}
     })
 }
 
-function selectArticleComments(articleId, sortBy, order) {
-    const selectComments = db.query("SELECT * FROM comments WHERE article_id = $1 ORDER BY created_at ASC", [articleId])
+function selectArticleComments(articleId, limit, page) {
+    const offset = limit * (page - 1)
+    const selectComments = db.query("SELECT * FROM comments WHERE article_id = $1 ORDER BY created_at ASC LIMIT $2 OFFSET $3", [articleId, limit, offset])
     const checkArticle = selectArticle(articleId)
 
     return Promise.all([selectComments, checkArticle])
@@ -94,9 +109,6 @@ function insertIntoComments(articleId, username, body, next) {
             const comment = res[0].rows[0]
             return comment
         })
-        .catch((err) => {
-            next(err)
-        })
 }
 
 function updateArticleVotes(articleId, increment, next) {
@@ -110,20 +122,20 @@ function updateArticleVotes(articleId, increment, next) {
         .catch(next)
 }
 
-function deleteCommentModel(commentId, next) {
-    return checkComment = db.query(`SELECT * FROM comments WHERE comment_id = $1`, [commentId])
+function deleteCommentModel(commentId) {
+    return db.query(`SELECT * FROM comments WHERE comment_id = $1`, [commentId])
         .then((res) => {
             if (res.rows.length === 0) {
+                console.log("catch in model!")
                 const status = 404
-                const msg = "No comment found with that ID"
+                const msg = "Not found: Comment not found"
                 return Promise.reject({status, msg})
             }
             return db.query(`DELETE FROM comments WHERE comment_id = $1`, [commentId])
         })
-        .catch(next)
 }
 
-function selectUsers(next) {
+function selectUsers() {
     return db.query(`SELECT * FROM users`)
         .then((res) => {
             const users = res.rows
@@ -131,4 +143,66 @@ function selectUsers(next) {
         })
 }
 
-module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers }
+function selectUser(username) {
+    return db.query(`SELECT * FROM users WHERE username = $1`, [username])
+        .then((res) => {
+            let user = res.rows[0]
+            if (!user) {
+                return Promise.reject({
+                    status: 404,
+                    msg: "Not found: User not found"
+                })
+            }
+            return user
+        })
+}
+
+function incrementCommentVotes(id, increment) {
+    return db.query(`UPDATE comments SET votes = votes + $1 WHERE comment_id = $2 RETURNING *`, [increment, id])
+        .then((res) => {
+            const comment = res.rows[0]
+            if (!comment) {
+                return Promise.reject({status: 404, msg: "Not found: No comment found with that ID"})
+            }
+            return comment
+        })
+}
+
+function insertArticle(username, title, body, topic, article_img_url) {
+    return db.query(`INSERT INTO articles (title, topic, author, body, article_img_url) VALUES ($1,$2, $3, $4, $5) RETURNING *`, [title, topic, username, body, article_img_url])
+        .then((res) => {
+            const article = res.rows[0]
+            return db.query(`SELECT COUNT (article_id) FROM comments WHERE article_id = $1`, [article.article_id])
+                .then((res) => {
+                    const comment_count = res.rows[0].comment_count
+                    article.comment_count = comment_count
+                    return article
+                })
+        })
+}
+
+function insertTopic(slug, description) {
+    return db.query(`INSERT INTO topics (slug, description) VALUES ($1, $2) RETURNING *`, [slug, description])
+        .then((res) => {
+            const topic = res.rows[0]
+            return topic
+        })
+        .catch((err) => {
+            console.log(err)
+        })
+}
+
+function deleteArticleModel(id) {
+    return db.query(`SELECT * FROM articles WHERE article_id = $1`, [id])
+        .then((res) => {
+            if (res.rows.length === 0) {
+                return Promise.reject({
+                    status: 404, 
+                    msg: "Not found: Article not found" 
+                })
+            }
+            db.query(`DELETE FROM articles WHERE article_id = $1`, [id])
+        })
+}
+
+module.exports = { selectTopics, selectArticle, selectArticles, selectArticleComments, insertIntoComments, updateArticleVotes, deleteCommentModel, selectUsers, selectUser, incrementCommentVotes, insertArticle, insertTopic, deleteArticleModel }
