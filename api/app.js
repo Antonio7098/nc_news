@@ -1,17 +1,24 @@
 const express = require('express')
+const { apiRouter, usersRouter, topicsRouter, commentRouter, articleRouter } = require("./routers")
 const { getEndpoints, getTopics, getArticle, getArticles, getArticleComments, addComment, patchArticleVotes, deleteComment, getUsers, getUser, patchCommentVotes, postArticle, postTopic, deleteArticle } = require("./controller")
+
+const cors = require('cors');
 
 // Setting up the app and specifying that we want to parse get requests
 const app = express()
+app.use(cors());
 app.use(express.json())
 
 // ------------------------------------------------- Paths --------------------------------------------------
 
+app.use("/api", apiRouter)
+
+
+
 // #1 Get documentation detailing all of the available API endpoints
 app.get("/api", getEndpoints)
 
-// Get a list of topics
-app.get("/api/topics", getTopics)
+
 
 // Get article by id
 app.get("/api/articles/:article_id", getArticle)
@@ -28,26 +35,32 @@ app.post("/api/articles/:article_id/comments", addComment)
 // Update article votes
 app.patch("/api/articles/:article_id", patchArticleVotes)
 
-// Delete comment
-app.delete("/api/comments/:comment_id", deleteComment)
-
-// Get users
-app.get("/api/users", getUsers)
-
-// Get user
-app.get("/api/users/:username", getUser)
-
-// Update comment votes
-app.patch("/api/comments/:comment_id", patchCommentVotes)
-
 // Add article
 app.post("/api/articles", postArticle)
 
-// Add topic
-app.post("/api/topics", postTopic)
-
 // Deelete article
 app.delete("/api/articles/:article_id", deleteArticle)
+
+
+
+
+// Topics
+apiRouter.use("/topics", topicsRouter)
+
+// Comments
+apiRouter.use("/comments", commentRouter)
+
+
+apiRouter.use("/users", usersRouter);  // Mount the usersRouter on the /users path
+
+
+
+
+
+
+// Users
+
+
 
 // ------------------------------------------- Errors --------------------------------------------------
 

@@ -122,17 +122,17 @@ function updateArticleVotes(articleId, increment, next) {
         .catch(next)
 }
 
-function deleteCommentModel(commentId, next) {
-    return checkComment = db.query(`SELECT * FROM comments WHERE comment_id = $1`, [commentId])
+function deleteCommentModel(commentId) {
+    return db.query(`SELECT * FROM comments WHERE comment_id = $1`, [commentId])
         .then((res) => {
             if (res.rows.length === 0) {
+                console.log("catch in model!")
                 const status = 404
-                const msg = "No comment found with that ID"
+                const msg = "Not found: Comment not found"
                 return Promise.reject({status, msg})
             }
             return db.query(`DELETE FROM comments WHERE comment_id = $1`, [commentId])
         })
-        .catch(next)
 }
 
 function selectUsers() {
