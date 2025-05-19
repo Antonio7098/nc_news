@@ -95,6 +95,7 @@ function patchArticleVotes(req, res, next) {
 
 function deleteComment(req, res, next) {
     const commentID = req.params.comment_id
+    console.log(commentID, "<----------------- In controller")
     if (isNaN(commentID)) {
         const status = 400
         msg = "Bad request: Invalid comment ID"
@@ -102,7 +103,10 @@ function deleteComment(req, res, next) {
     }
     return deleteCommentModel(commentID, next)
         .then(() => res.status(204).send())
-        .catch(next)
+        .catch((err) => {
+            console.log(err)
+            return next(err)
+        })
 }
 
 function getUsers(req, res) {

@@ -648,7 +648,7 @@ describe('Sad path', () => {
     .del("/api/comments/10000000")
     .expect(404)
     .then(({ body: { msg } }) => {
-      expect(msg).toBe("No comment found with that ID")
+      expect(msg).toBe("Not found: Comment not found")
       })
     })
     
