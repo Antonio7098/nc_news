@@ -20,7 +20,7 @@ function selectArticle(articleId) {
         })
 }
 
-function selectArticles(sortBy, order, topic, limit, page) {
+function selectArticles(sortBy = 'created_at', order = 'DESC', topic, limit = 10, page = 1, search) {
     const validColumns = ['article_id', 'title', 'topic', 'author', 'created_at', 'votes', 'article_img_url', 'comment_count']
     const validOrders = ['ASC', 'DESC']
 
@@ -60,22 +60,45 @@ function selectArticles(sortBy, order, topic, limit, page) {
 
         let countStr = `SELECT COUNT(*) FROM articles`
         const countValues = []
-
+        
+        // Build WHERE clause for both queries
+        const whereConditions = []
+        
+        // Add topic condition if provided
         if (topic) {
-            queryStr += ` WHERE articles.topic = $3`
+            whereConditions.push(`articles.topic = $${queryValues.length + 1}`)
             queryValues.push(topic)
-
-            countStr += ` WHERE articles.topic = $1`
             countValues.push(topic)
         }
+        
+        // Add search condition if provided
+        if (search) {
+            whereConditions.push(`(
+                articles.title ILIKE $${queryValues.length + 1} OR
+                articles.body ILIKE $${queryValues.length + 1} OR
+                articles.topic ILIKE $${queryValues.length + 1} OR
+                articles.author ILIKE $${queryValues.length + 1}
+            )`)
+            const searchPattern = `%${search}%`
+            queryValues.push(searchPattern)
+            countValues.push(searchPattern)
+        }
+        
+        // Add WHERE clause to both queries if conditions exist
+        if (whereConditions.length > 0) {
+            const whereClause = ` WHERE ${whereConditions.join(" AND ")}`
+            queryStr += whereClause
+            countStr += whereClause
+        }
 
+        // Add pagination, grouping, and ordering
         queryStr += `
             GROUP BY articles.article_id
-            ORDER BY articles.${sortBy} ${order.toUpperCase()}
-            LIMIT $1 OFFSET $2;`
-        const offset = (page - 1) * limit
+            ORDER BY articles.${sortBy} ${order}
+            LIMIT $${queryValues.length + 1} OFFSET $${queryValues.length + 2}`
         
-        queryValues.unshift(limit, offset)
+        const offset = (page - 1) * limit
+        queryValues.push(limit, offset)
 
         const pageQuery = db.query(queryStr, queryValues)
         const countQuery = db.query(countStr, countValues)
@@ -101,7 +124,7 @@ function selectArticleComments(articleId, limit, page) {
             return sortedComments
         })
 }
-function insertIntoComments(articleId, username, body, next) {
+function insertIntoComments(articleId, username, body) {
     const checkArticle = selectArticle(articleId)
     const addComment = db.query(`INSERT INTO comments (article_id, body, author) VALUES ($1, $2, $3) RETURNING *`, [articleId, body, username])
     return Promise.all([addComment, checkArticle])

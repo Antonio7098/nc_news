@@ -199,6 +199,87 @@ describe('"GET /api/articles"', () => {
             });
         });
 
+        
+        describe("GET /api/articles (search functionality)", () => {
+          test("200: filters articles by search parameter matching title", () => {
+              return request(app)
+                  .get("/api/articles?search=living")
+                  .expect(200)
+                  .then(({ body }) => {
+                      expect(body.articles.length).toBeGreaterThan(0);
+                      body.articles.forEach((article) => {
+                          expect(article.title.toLowerCase()).toContain("living");
+                      });
+                  });
+          });
+      
+          test("200: filters articles by search parameter matching author", () => {
+              return request(app)
+                  .get("/api/articles?search=butter")
+                  .expect(200)
+                  .then(({ body }) => {
+                      expect(body.articles.length).toBeGreaterThan(0);
+                      body.articles.forEach((article) => {
+                          expect(article.author.toLowerCase()).toContain("butter");
+                      });
+                  });
+          });
+      
+          test("200: works with multiple filters including search", () => {
+              return request(app)
+                  .get("/api/articles?topic=mitch&search=living&sort_by=votes&order=ASC")
+                  .expect(200)
+                  .then(({ body }) => {
+                      expect(body.articles).toBeSortedBy("votes");
+                      body.articles.forEach((article) => {
+                          expect(article.topic).toBe("mitch");
+                          // One of the searchable fields should contain "living"
+                          expect(
+                              article.title.toLowerCase().includes("living") ||
+                              article.author.toLowerCase().includes("living") ||
+                              article.topic.toLowerCase().includes("living")
+                          ).toBe(true);
+                      });
+                  });
+          });
+      
+          test("200: returns empty array for search with no matches", () => {
+              return request(app)
+                  .get("/api/articles?search=xyznonexistent")
+                  .expect(200)
+                  .then(({ body }) => {
+                      expect(body.articles).toEqual([]);
+                      expect(body.total_count).toBe(0);
+                  });
+          });
+      
+          test("200: search is case insensitive", () => {
+              return request(app)
+                  .get("/api/articles?search=LIVING")
+                  .expect(200)
+                  .then(({ body }) => {
+                      expect(body.articles.length).toBeGreaterThan(0);
+                      body.articles.forEach((article) => {
+                          expect(
+                              article.title.toLowerCase().includes("living") ||
+                              article.author.toLowerCase().includes("living") ||
+                              article.topic.toLowerCase().includes("living")
+                          ).toBe(true);
+                      });
+                  });
+          });
+      
+          test("200: pagination works with search parameter", () => {
+              return request(app)
+                  .get("/api/articles?search=a&limit=5&p=2")
+                  .expect(200)
+                  .then(({ body }) => {
+                      expect(body.articles.length).toBeLessThanOrEqual(5);
+                      expect(body.total_count).toBeGreaterThan(5);
+                  });
+          });
+      });
+
         // describe('Edge cases', () => {
         //   test('200: no topics of that type', () => {
         //     const slug = 'test_topic';

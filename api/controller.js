@@ -22,7 +22,7 @@ function getArticle(req, res, next) {
 }
 
 function getArticles(req, res, next) {
-    let { sort_by: sortBy, order, topic, limit, page } = req.query
+    let { sort_by: sortBy, order, topic, limit, page, search } = req.query
 
     sortBy = sortBy || 'created_at'
     order = order ? order.toUpperCase() : 'DESC'
@@ -36,7 +36,7 @@ function getArticles(req, res, next) {
     limit = limit || 10
     page = page || 1
 
-    return selectArticles(sortBy, order, topic, limit, page)
+    return selectArticles(sortBy, order, topic, limit, page, search)
         .then((result) => {
             const {articles, totalCount: total_count} = result
 
