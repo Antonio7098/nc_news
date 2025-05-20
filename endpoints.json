@@ -14,31 +14,32 @@
       ]
     }
   },
-  "GET /api/articles": {
-    "description": "Serves an array of all articles, with optional sorting, ordering, filtering by topic, and pagination.",
-    "queries": [
-      "sort_by (string, optional): column to sort by (defaults to created_at)",
-      "order (string, optional): sort order ('asc' or 'desc', defaults to 'desc')",
-      "topic (string, optional): filter articles by topic",
-      "limit (number, optional): limit the number of articles per page (defaults to 10)",
-      "page (number, optional): specify the page number (defaults to 1)"
+"GET /api/articles": {
+  "description": "Serves an array of all articles, with optional sorting, ordering, filtering by topic, pagination, and search functionality.",
+  "queries": [
+    "sort_by (string, optional): column to sort by (defaults to created_at)",
+    "order (string, optional): sort order ('asc' or 'desc', defaults to 'desc')",
+    "topic (string, optional): filter articles by topic",
+    "limit (number, optional): limit the number of articles per page (defaults to 10)",
+    "page (number, optional): specify the page number (defaults to 1)",
+    "search (string, optional): search articles by keyword (matches title, body, topic, or author)"
+  ],
+  "exampleResponse": {
+    "articles": [
+      {
+        "article_id": 1,
+        "title": "Living in the shadow of a great man",
+        "topic": "mitch",
+        "author": "butter_bridge",
+        "created_at": "2020-07-09T20:11:00.000Z",
+        "votes": 100,
+        "article_img_url": "https://images.pexels.com/photos/158651/news-reporter-journalist-press-conference-158651.jpeg?w=700&h=700",
+        "comment_count": 11
+      }
     ],
-    "exampleResponse": {
-      "articles": [
-        {
-          "article_id": 1,
-          "title": "Living in the shadow of a great man",
-          "topic": "mitch",
-          "author": "butter_bridge",
-          "created_at": "2020-07-09T20:11:00.000Z",
-          "votes": 100,
-          "article_img_url": "https://images.pexels.com/photos/158651/news-reporter-journalist-press-conference-158651.jpeg?w=700&h=700",
-          "comment_count": 11
-        }
-      ],
-      "total_count": 12
-    }
-  },
+    "total_count": 12
+  }
+},
   "GET /api/articles/:article_id": {
     "description": "Serves a specific article by its ID.",
     "queries": [],
